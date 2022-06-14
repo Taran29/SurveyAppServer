@@ -1,4 +1,6 @@
 import mongoose from 'mongoose'
+import Joi from 'joi'
+import jwt from 'jsonwebtoken'
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -40,11 +42,36 @@ const userSchema = new mongoose.Schema({
         }],
         required: true
       }
-    }]
+    }],
+    default: []
   }
 })
 
-const User = mongoose.Model('user', userSchema)
+userSchema.methods.generateAuthToken = function () {
+  return jwt.sign({
+    _id: this.id,
+    userName: this.userName,
+    email: this.email
+  }, process.env.JWT_PRIVATE_KEY)
+}
 
-export default User
+userSchema.index({ userName: 1 }, { unique: true })
+
+const User = mongoose.model('user', userSchema)
+
+const validateUser = (user) => {
+  const schema = Joi.object({
+    name: Joi.string().min(5).max(25).required(),
+    userName: Joi.string().max(25).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).max(24).required()
+  })
+
+  return schema.validate(user)
+}
+
+export {
+  User,
+  validateUser
+}
 
