@@ -21,14 +21,13 @@ router.post('/', async (req, res) => {
 
   const user = new User({
     name: req.body.name,
-    userName: req.body.userName,
     email: req.body.email,
     hashedPassword: hashed,
   })
 
   try {
     let result = await user.save()
-    result = _.pick(result, ['_id', 'name', 'userName', 'email'])
+    result = _.pick(result, ['_id', 'name', 'email'])
 
     const token = user.generateAuthToken()
     res.header('x-auth-token', token).status(200).send(result)
