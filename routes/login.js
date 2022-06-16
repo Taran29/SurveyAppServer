@@ -20,7 +20,11 @@ router.post('/', async (req, res) => {
   const result = _.pick(user, ['_id', 'name', 'email', 'createdSurveys', 'filledSurveys'])
   const token = user.generateAuthToken()
 
-  res.header('x-auth-token', token).status(200).send(result)
+  res.setHeader("Access-Control-Expose-Headers", "x-auth-token");
+  res.setHeader('x-auth-token', token).status(200).send({
+    message: 'User logged in successfully',
+    result: result
+  })
 })
 
 export default router

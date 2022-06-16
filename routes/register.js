@@ -31,8 +31,6 @@ router.post('/', async (req, res) => {
     result = _.pick(result, ['_id', 'name', 'email'])
 
     const token = user.generateAuthToken()
-    console.log(result)
-    console.log(token)
     res.setHeader("Access-Control-Expose-Headers", "x-auth-token");
     res.setHeader('x-auth-token', token).status(200).send({
       message: 'User created successfully',
