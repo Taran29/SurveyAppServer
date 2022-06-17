@@ -68,8 +68,6 @@ router.post('/setNewPassword', async (req, res) => {
       }),
     })
 
-    console.log(loginResponse)
-
     const response = await loginResponse.json()
 
     res.setHeader('Access-Control-Expose-Headers', 'x-auth-token')
