@@ -12,7 +12,6 @@ router.post('/', async (req, res) => {
   }
 
   const { error } = validateUser(req.body)
-  console.log(error)
   if (error) {
     return res.status(400).send({ message: error.details[0].message })
   }
@@ -20,10 +19,14 @@ router.post('/', async (req, res) => {
   const salt = await bcrypt.genSalt(10)
   const hashed = await bcrypt.hash(req.body.password, salt)
 
+  const hashedAnswer = await bcrypt.hash(req.body.securityAnswer, salt)
+
   const user = new User({
     name: req.body.name,
     email: req.body.email,
     hashedPassword: hashed,
+    securityQuestion: req.body.securityQuestion,
+    securityAnswer: hashedAnswer
   })
 
   try {

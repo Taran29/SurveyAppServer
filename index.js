@@ -1,9 +1,9 @@
 import express from 'express'
 import mongoose from 'mongoose'
-import cors from 'cors'
 import { config } from 'dotenv'
 import register from './routes/register.js'
 import login from './routes/login.js'
+import forgotPassword from './routes/forgotPassword.js'
 
 config()
 
@@ -16,6 +16,7 @@ app.use(function (req, res, next) {
 });
 app.use('/api/register', register)
 app.use('/api/login', login)
+app.use('/api/forgotPassword', forgotPassword)
 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
