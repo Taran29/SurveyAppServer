@@ -39,7 +39,7 @@ router.post('/', async (req, res) => {
   const token = jwt.sign({
     _id: user._id,
   }, process.env.JWT_PRIVATE_KEY)
-  res.setHeader("Access-Control-Expose-Headers", "x-auth-token");
+  res.setHeader("Access-Control-Expose-Headers", "x-forgot-password-token");
   res.setHeader('x-forgot-password-token', token)
   res.status(200).send({
     message: 'Answer is correct'
