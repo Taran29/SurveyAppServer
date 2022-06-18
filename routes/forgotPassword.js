@@ -6,6 +6,20 @@ import { User } from '../models/user.js'
 
 const router = express.Router()
 
+router.get('/user/:email', async (req, res) => {
+  const result = await User.findOne({ email: req.params.email }).select('securityQuestion -_id')
+  if (!result) {
+    return res.status(400).send({
+      message: 'User does not exist. Please register.'
+    })
+  }
+
+  return res.status(200).send({
+    message: 'User exists',
+    securityQuestion: result.securityQuestion
+  })
+})
+
 router.post('/', async (req, res) => {
   const user = await User.findOne({ email: req.body.email })
 

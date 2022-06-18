@@ -1,9 +1,14 @@
 import express from 'express'
 import mongoose from 'mongoose'
 import { config } from 'dotenv'
-import register from './routes/register.js'
-import login from './routes/login.js'
-import forgotPassword from './routes/forgotPassword.js'
+// import register from './routes/register.js'
+// import login from './routes/login.js'
+// import forgotPassword from './routes/forgotPassword.js'
+import {
+  register,
+  login,
+  forgotPassword,
+} from './routes/index.js'
 
 config()
 
