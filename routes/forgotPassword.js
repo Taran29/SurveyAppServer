@@ -47,16 +47,26 @@ router.post('/', async (req, res) => {
 })
 
 router.post('/setNewPassword', async (req, res) => {
+  if ((req.body.newPassword.length < 8) || (req.body.newPassword.length > 24)) {
+    return res.status(400).send({
+      message: 'Password must be between 8 and 24 characters long'
+    })
+  }
+
   const token = req.header('x-forgot-password-token')
   if (!token) {
-    return res.status(401).send('Access denied. No token provided')
+    return res.status(401).send({
+      message: 'Access denied. No token provided'
+    })
   }
 
   let payload
   try {
     payload = jwt.verify(token, process.env.JWT_PRIVATE_KEY)
   } catch (ex) {
-    return res.status(400).send('Invalid token')
+    return res.status(402).send({
+      message: 'Invalid token'
+    })
   }
 
   const salt = await bcrypt.genSalt(10)
@@ -69,26 +79,11 @@ router.post('/setNewPassword', async (req, res) => {
       }
     }, { new: true })
 
-    const loginResponse = await fetch('http://localhost:5000/api/login', {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({
-        email: user.email,
-        password: req.body.newPassword
-      }),
-    })
-
-    const response = await loginResponse.json()
-
-    res.setHeader('Access-Control-Expose-Headers', 'x-auth-token')
-    res.setHeader('x-auth-token', loginResponse.headers.get('x-auth-token'))
     return res.status(200).send({
-      message: response.message,
-      result: response.result
+      message: 'Password reset successful.',
+      result: {
+        email: user.email
+      }
     })
   } catch (ex) {
     return res.status(500).send({
