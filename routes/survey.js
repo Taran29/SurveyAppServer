@@ -29,18 +29,28 @@ router.get('/', async (req, res) => {
     return fs.surveyID
   })
 
-  surveys = surveys.filter((survey) => {
-    let isReturn = false
-    filledSurveys.forEach((fs) => {
-      if (fs != survey._id) {
-        isReturn = true
+  const createdSurveys = user.createdSurveys
+
+  if (filledSurveys.length > 0) {
+    surveys = surveys.filter((survey) => {
+      let isReturn = false
+      filledSurveys.forEach((fs) => {
+        if (fs != survey._id) {
+          isReturn = true
+        }
+      })
+
+      if (isReturn) {
+        return survey
       }
     })
+  }
 
-    if (isReturn) {
-      return survey
-    }
-  })
+  if (createdSurveys.length > 0) {
+    surveys = surveys.filter((survey) => {
+      return !createdSurveys.includes(survey._id)
+    })
+  }
 
   return res.status(200).send({
     body: surveys
@@ -54,21 +64,41 @@ router.post('/create', auth, async (req, res) => {
     return res.status(400).send({ message: error.details[0].message })
   }
 
+  let questionsArr = req.body.questions.map((ques, index) => {
+    let obj = {
+      question: ques.question,
+      options: ques.options.map((opt, idx) => {
+        return {
+          option: opt,
+          numberOfTimesChosen: 0
+        }
+      })
+    }
+    return obj
+  })
+
   const survey = new Survey({
     title: req.body.title,
     category: req.body.category,
     private: req.body.private,
     createdBy: req.body.createdBy,
     createdAt: req.body.createdAt,
-    questions: req.body.questions
+    questions: questionsArr
   })
 
-  const result = await survey.save()
-  await User.findByIdAndUpdate(req.user._id, {
-    $push: {
-      createdSurveys: result._id
-    },
-  })
+  let result
+
+  try {
+    result = await survey.save()
+    await User.findByIdAndUpdate(req.user._id, {
+      $push: {
+        createdSurveys: result._id
+      },
+    })
+  } catch (ex) {
+    return res.status(404).send({ message: 'Cannot connect to database right now.' })
+  }
+
 
   res.status(200).send({
     result: result,

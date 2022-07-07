@@ -36,8 +36,21 @@ const SurveySchema = new mongoose.Schema({
         minlength: 1,
         maxlength: 50
       },
-      options: [String]
+      options: [{
+        option: {
+          type: String,
+          required: true
+        },
+        numberOfTimesChosen: {
+          type: Number,
+          default: 0
+        }
+      }]
     }]
+  },
+  numberOfTimesFilled: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -58,7 +71,7 @@ const validateSurvey = (survey) => {
     questions: Joi.array().items({
       question: Joi.string().min(1).max(50).required(),
       options: Joi.array().items(Joi.string())
-    })
+    }),
   })
 
   return schema.validate(survey, { allowUnknown: true })
