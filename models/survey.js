@@ -14,6 +14,11 @@ const SurveySchema = new mongoose.Schema({
     minlength: 1,
     maxlength: 50
   },
+  private: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     required: true
@@ -48,6 +53,7 @@ const validateSurvey = (survey) => {
   const schema = Joi.object({
     title: Joi.string().min(1).max(50).required(),
     category: Joi.string().min(1).max(50).required(),
+    private: Joi.boolean().default(false).required(),
     createdAt: Joi.date().required(),
     questions: Joi.array().items({
       question: Joi.string().min(1).max(50).required(),
