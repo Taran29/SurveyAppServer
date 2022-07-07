@@ -57,6 +57,28 @@ router.get('/', async (req, res) => {
   })
 })
 
+router.get('/:id', auth, async (req, res) => {
+  let survey
+  try {
+    survey = await Survey.findById(req.params.id)
+  } catch (ex) {
+    return res.status(400).send({
+      message: 'Could not find survey with given ID.'
+    })
+  }
+
+  if (survey.createdBy == req.user._id) {
+    return res.status(400).send({
+      message: 'Cannot fill your own survey.'
+    })
+  }
+
+  return res.status(200).send({
+    message: 'Survey found',
+    body: survey
+  })
+})
+
 router.post('/create', auth, async (req, res) => {
   const { error } = validateSurvey(req.body)
 
