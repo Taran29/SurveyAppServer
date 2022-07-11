@@ -70,14 +70,18 @@ router.get('/:id', auth, async (req, res) => {
   }
 
   if (survey.createdBy == req.user._id) {
-    return res.status(400).send({
+    return res.status(401).send({
       message: 'Cannot fill your own survey.'
     })
   }
 
   return res.status(200).send({
     message: 'Survey found',
-    body: survey
+    body: {
+      title: survey.title,
+      category: survey.category,
+      questions: survey.questions
+    }
   })
 })
 
