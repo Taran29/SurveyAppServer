@@ -6,11 +6,22 @@ import jwt from 'jsonwebtoken'
 
 const router = express.Router()
 
-router.get('/', async (req, res) => {
-  let surveys = await Survey.find({ private: false })
+router.get('/page/:pageNumber', async (req, res) => {
+  const pageNumber = parseInt(req.params.pageNumber)
+  const pageSize = 10
+  let surveys = await Survey
+    .find({ private: false })
+    .skip((pageNumber - 1) * pageSize)
+    .limit(pageSize)
+
+  let count = await Survey.countDocuments({ private: false })
+  let totalPages = Math.ceil(count / pageSize)
   if (!req.header('x-auth-token')) {
     return res.status(200).send({
-      body: surveys
+      body: {
+        surveys: surveys,
+        totalPages: totalPages
+      }
     })
   }
 
@@ -31,29 +42,20 @@ router.get('/', async (req, res) => {
 
   const createdSurveys = user.createdSurveys
 
-  if (filledSurveys.length > 0) {
-    surveys = surveys.filter((survey) => {
-      let isReturn = false
-      filledSurveys.forEach((fs) => {
-        if (fs != survey._id) {
-          isReturn = true
-        }
-      })
-
-      if (isReturn) {
-        return survey
-      }
-    })
+  const filterObj = {
+    private: false,
+    _id: { $nin: filledSurveys },
+    _id: { $nin: createdSurveys },
   }
-
-  if (createdSurveys.length > 0) {
-    surveys = surveys.filter((survey) => {
-      return !createdSurveys.includes(survey._id)
-    })
-  }
+  surveys = await Survey.find(filterObj).skip((pageNumber - 1) * pageSize).limit(pageSize)
+  count = await Survey.countDocuments(filterObj)
+  totalPages = Math.ceil(count / pageSize)
 
   return res.status(200).send({
-    body: surveys
+    body: {
+      surveys: surveys,
+      totalPages: totalPages
+    }
   })
 })
 
