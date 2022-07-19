@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema({
             type: Number,
             required: true
           },
-          options: [Number]
+          option: Number
         }],
         required: true
       }

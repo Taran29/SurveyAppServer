@@ -3,12 +3,13 @@ import auth from '../middlewares/auth.js'
 import { Survey, validateSurvey } from '../models/survey.js'
 import { User } from '../models/user.js'
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
 
 const router = express.Router()
 
 router.get('/page/:pageNumber', async (req, res) => {
   const pageNumber = parseInt(req.params.pageNumber)
-  const pageSize = 10
+  const pageSize = 3
   let surveys = await Survey
     .find({ private: false })
     .skip((pageNumber - 1) * pageSize)
@@ -37,15 +38,14 @@ router.get('/page/:pageNumber', async (req, res) => {
   const user = await User.findById(payload._id)
 
   const filledSurveys = user.filledSurveys.map((fs) => {
-    return fs.surveyID
+    return mongoose.Types.ObjectId(fs.surveyID)
   })
 
   const createdSurveys = user.createdSurveys
 
   const filterObj = {
     private: false,
-    _id: { $nin: filledSurveys },
-    _id: { $nin: createdSurveys },
+    _id: { $nin: [...filledSurveys, ...createdSurveys] },
   }
   surveys = await Survey.find(filterObj).skip((pageNumber - 1) * pageSize).limit(pageSize)
   count = await Survey.countDocuments(filterObj)
@@ -63,15 +63,14 @@ router.get('/:id', auth, async (req, res) => {
   let survey
   try {
     survey = await Survey.findById(req.params.id)
+    if (survey.createdBy == req.user._id) {
+      return res.status(401).send({
+        message: 'Cannot fill your own survey.'
+      })
+    }
   } catch (ex) {
     return res.status(400).send({
       message: 'Could not find survey with given ID.'
-    })
-  }
-
-  if (survey.createdBy == req.user._id) {
-    return res.status(401).send({
-      message: 'Cannot fill your own survey.'
     })
   }
 
@@ -127,11 +126,41 @@ router.post('/create', auth, async (req, res) => {
     return res.status(404).send({ message: 'Cannot connect to database right now.' })
   }
 
-
   res.status(200).send({
     result: result,
     message: 'Survey created successfully.'
   })
+})
+
+router.post('/fill/:id', auth, async (req, res) => {
+  let selections = req.body.userSelections
+  let incObj = { 'numberOfTimesFilled': 1 }
+  const questions = []
+  for (const selection in selections) {
+    incObj[`questions.${selection}.options.${selections[selection]}.numberOfTimesChosen`] = 1
+    questions.push({ questionIndex: selection, option: selections[selection] })
+  }
+
+  const fillObj = {
+    surveyID: req.params.id,
+    questions: questions
+  }
+
+  try {
+    await Survey.findByIdAndUpdate(req.params.id, {
+      $inc: incObj
+    }, { new: true })
+
+    await User.findByIdAndUpdate(req.user._id, {
+      $push: {
+        filledSurveys: fillObj
+      }
+    })
+
+    return res.status(200).send({ message: 'Survey filled successfully. ' })
+  } catch (ex) {
+    return res.status(502).send({ message: 'Cannot connect to database right now.' })
+  }
 })
 
 router.delete('/:surveyID', auth, async (req, res) => {
