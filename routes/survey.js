@@ -102,6 +102,7 @@ router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
 
     let filledSurveyInfo = filledSurveys.filledSurveys.map((survey) => {
       return {
+        _id: survey.surveyID._id,
         title: survey.surveyID.title,
         category: survey.surveyID.category,
       }
@@ -116,6 +117,30 @@ router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
   } catch (ex) {
     console.log(ex)
     return res.status(502).send({ message: 'Cannot connect to database.' })
+  }
+})
+
+router.get('/filledSurvey/:surveyID', auth, async (req, res) => {
+  try {
+    const filledSurveys = await User.findById(req.user._id, 'filledSurveys')
+    const survey = await Survey.findById(req.params.surveyID).select('questions title category')
+
+    let selections
+    filledSurveys.filledSurveys.forEach((survey) => {
+      if (survey.surveyID == req.params.surveyID) {
+        selections = survey.questions
+      }
+    })
+    return res.status(200).send({
+      body: {
+        survey: survey,
+        selections: selections
+      }
+    })
+  } catch (ex) {
+    return res.status(502).send({
+      message: 'Cannot connect to the database right now'
+    })
   }
 })
 
