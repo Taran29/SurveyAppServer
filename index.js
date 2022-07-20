@@ -5,7 +5,8 @@ import {
   register,
   login,
   forgotPassword,
-  survey
+  survey,
+  changeName,
 } from './routes/index.js'
 
 config()
@@ -15,12 +16,14 @@ app.use(express.json())
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-auth-token, x-forgot-password-token");
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   next();
 });
 app.use('/api/register', register)
 app.use('/api/login', login)
 app.use('/api/forgotPassword', forgotPassword)
 app.use('/api/survey', survey)
+app.use('/api/user/changeName', changeName)
 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
