@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import Joi from 'joi'
 import jwt from 'jsonwebtoken'
+import { Survey } from './survey.js'
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -29,11 +30,16 @@ const userSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     default: []
   },
+  createdSurveyCount: {
+    type: Number,
+    default: 0
+  },
   filledSurveys: {
     type: [{
       surveyID: {
-        type: String,
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'survey'
       },
       questions: {
         type: [{
@@ -47,6 +53,10 @@ const userSchema = new mongoose.Schema({
       }
     }],
     default: []
+  },
+  filledSurveyCount: {
+    type: Number,
+    default: 0
   }
 })
 

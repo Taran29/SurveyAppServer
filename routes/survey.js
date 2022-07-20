@@ -9,7 +9,7 @@ const router = express.Router()
 
 router.get('/page/:pageNumber', async (req, res) => {
   const pageNumber = parseInt(req.params.pageNumber)
-  const pageSize = 3
+  const pageSize = 10
   let surveys = await Survey
     .find({ private: false })
     .skip((pageNumber - 1) * pageSize)
@@ -84,6 +84,41 @@ router.get('/:id', auth, async (req, res) => {
   })
 })
 
+router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
+  const pageNumber = parseInt(req.params.pageNumber)
+  const pageSize = 10
+
+  try {
+    const filledSurveys = await User
+      .findById(req.user._id)
+      .select({
+        "filledSurveys": { "$slice": [(pageNumber - 1) * pageSize, pageSize] },
+        "filledSurveyCount": 1
+      })
+      .populate('filledSurveys.surveyID', 'title category')
+
+    let count = filledSurveys.filledSurveyCount
+    let totalPages = Math.ceil(count / pageSize)
+
+    let filledSurveyInfo = filledSurveys.filledSurveys.map((survey) => {
+      return {
+        title: survey.surveyID.title,
+        category: survey.surveyID.category,
+      }
+    })
+
+    return res.status(200).send({
+      body: {
+        surveys: filledSurveyInfo,
+        totalPages: totalPages
+      }
+    })
+  } catch (ex) {
+    console.log(ex)
+    return res.status(502).send({ message: 'Cannot connect to database.' })
+  }
+})
+
 router.post('/create', auth, async (req, res) => {
   const { error } = validateSurvey(req.body)
 
@@ -91,10 +126,10 @@ router.post('/create', auth, async (req, res) => {
     return res.status(400).send({ message: error.details[0].message })
   }
 
-  let questionsArr = req.body.questions.map((ques, index) => {
+  let questionsArr = req.body.questions.map((ques) => {
     let obj = {
       question: ques.question,
-      options: ques.options.map((opt, idx) => {
+      options: ques.options.map((opt) => {
         return {
           option: opt,
           numberOfTimesChosen: 0
@@ -121,6 +156,9 @@ router.post('/create', auth, async (req, res) => {
       $push: {
         createdSurveys: result._id
       },
+      $inc: {
+        createdSurveyCount: 1
+      }
     })
   } catch (ex) {
     return res.status(404).send({ message: 'Cannot connect to database right now.' })
@@ -154,6 +192,9 @@ router.post('/fill/:id', auth, async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, {
       $push: {
         filledSurveys: fillObj
+      },
+      $inc: {
+        filledSurveyCount: 1
       }
     })
 
