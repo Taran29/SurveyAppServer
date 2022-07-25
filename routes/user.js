@@ -100,4 +100,33 @@ router.get('/filledSurvey/:surveyID', auth, async (req, res) => {
   }
 })
 
+router.get('/stats/:id', auth, async (req, res) => {
+  try {
+    const survey = await Survey
+      .findById(req.params.id)
+      .select({
+        'title': 1,
+        'category': 1,
+        'numberOfTimesFilled': 1,
+        'questions': 1,
+        'createdBy': 1
+      })
+    if (!survey) {
+      return res.status(400).send({ message: 'Survey does not exist' })
+    }
+
+    if (survey.createdBy != req.user._id) {
+      return res.status(401).send({ message: 'Cannot view stats of a survey that is not yours.' })
+    }
+
+    return res.status(200).send({
+      body: {
+        survey: survey
+      },
+    })
+  } catch (ex) {
+    return res.status(502).send({ message: 'Cannot connect to database.' })
+  }
+})
+
 export default router
