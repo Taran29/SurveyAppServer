@@ -26,10 +26,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  createdSurveys: {
-    type: [mongoose.Schema.Types.ObjectId],
+  createdSurveys: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'survey',
     default: []
-  },
+  }],
   createdSurveyCount: {
     type: Number,
     default: 0

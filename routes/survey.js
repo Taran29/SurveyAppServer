@@ -84,66 +84,6 @@ router.get('/:id', auth, async (req, res) => {
   })
 })
 
-router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
-  const pageNumber = parseInt(req.params.pageNumber)
-  const pageSize = 10
-
-  try {
-    const filledSurveys = await User
-      .findById(req.user._id)
-      .select({
-        "filledSurveys": { "$slice": [(pageNumber - 1) * pageSize, pageSize] },
-        "filledSurveyCount": 1
-      })
-      .populate('filledSurveys.surveyID', 'title category')
-
-    let count = filledSurveys.filledSurveyCount
-    let totalPages = Math.ceil(count / pageSize)
-
-    let filledSurveyInfo = filledSurveys.filledSurveys.map((survey) => {
-      return {
-        _id: survey.surveyID._id,
-        title: survey.surveyID.title,
-        category: survey.surveyID.category,
-      }
-    })
-
-    return res.status(200).send({
-      body: {
-        surveys: filledSurveyInfo,
-        totalPages: totalPages
-      }
-    })
-  } catch (ex) {
-    console.log(ex)
-    return res.status(502).send({ message: 'Cannot connect to database.' })
-  }
-})
-
-router.get('/filledSurvey/:surveyID', auth, async (req, res) => {
-  try {
-    const filledSurveys = await User.findById(req.user._id, 'filledSurveys')
-    const survey = await Survey.findById(req.params.surveyID).select('questions title category')
-
-    let selections
-    filledSurveys.filledSurveys.forEach((survey) => {
-      if (survey.surveyID == req.params.surveyID) {
-        selections = survey.questions
-      }
-    })
-    return res.status(200).send({
-      body: {
-        survey: survey,
-        selections: selections
-      }
-    })
-  } catch (ex) {
-    return res.status(502).send({
-      message: 'Cannot connect to the database right now'
-    })
-  }
-})
-
 router.post('/create', auth, async (req, res) => {
   const { error } = validateSurvey(req.body)
 
