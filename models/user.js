@@ -6,7 +6,7 @@ import { Survey } from './survey.js'
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    minlength: 5,
+    minlength: 1,
     maxlength: 25,
     required: true
   },
@@ -72,7 +72,7 @@ const User = mongoose.model('user', userSchema)
 
 const validateUser = (user) => {
   const schema = Joi.object({
-    name: Joi.string().min(5).max(25).required(),
+    name: Joi.string().min(1).max(25).required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).max(24).required(),
     securityQuestion: Joi.string().min(3).max(50).required(),
