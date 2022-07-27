@@ -64,7 +64,7 @@ router.get('/:id', auth, async (req, res) => {
   try {
     survey = await Survey.findById(req.params.id)
     if (survey.createdBy == req.user._id) {
-      return res.status(401).send({
+      return res.status(307).send({
         message: 'Cannot fill your own survey.'
       })
     }
