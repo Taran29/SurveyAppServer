@@ -17,14 +17,9 @@ router.get('/createdSurveys/page/:pageNumber', auth, async (req, res) => {
         "createdSurveyCount": 1,
         "_id": 0
       })
-      // .populate('createdSurveys', 'title category')
       .populate({
         path: 'createdSurveys',
         select: 'title category',
-        populate: {
-          path: 'category',
-          select: 'category'
-        }
       })
 
     const count = createdSurveys.createdSurveyCount
@@ -34,7 +29,7 @@ router.get('/createdSurveys/page/:pageNumber', auth, async (req, res) => {
       return {
         _id: survey._id,
         title: survey.title,
-        category: survey.category.category
+        category: survey.category
       }
     })
 
@@ -63,10 +58,6 @@ router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
       .populate({
         path: 'filledSurveys.surveyID',
         select: 'title category',
-        populate: {
-          path: 'category',
-          select: 'category'
-        }
       })
 
     let count = filledSurveys.filledSurveyCount
@@ -76,7 +67,7 @@ router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
       return {
         _id: survey.surveyID._id,
         title: survey.surveyID.title,
-        category: survey.surveyID.category.category,
+        category: survey.surveyID.category,
       }
     })
 
@@ -98,7 +89,6 @@ router.get('/filledSurvey/:surveyID', auth, async (req, res) => {
     const survey = await Survey
       .findById(req.params.surveyID)
       .select('questions title category')
-      .populate('category', 'category')
 
     let selections
     filledSurveys.filledSurveys.forEach((survey) => {
@@ -110,7 +100,7 @@ router.get('/filledSurvey/:surveyID', auth, async (req, res) => {
       body: {
         survey: {
           title: survey.title,
-          category: survey.category.category,
+          category: survey.category,
           questions: survey.questions
         },
         selections: selections
@@ -132,9 +122,8 @@ router.get('/stats/:id', auth, async (req, res) => {
         'category': 1,
         'numberOfTimesFilled': 1,
         'questions': 1,
-        'createdBy': 1
+        'createdBy': 1,
       })
-      .populate('category', 'category')
 
     if (!survey) {
       return res.status(400).send({ message: 'Survey does not exist' })
@@ -147,8 +136,9 @@ router.get('/stats/:id', auth, async (req, res) => {
     return res.status(200).send({
       body: {
         survey: {
+          _id: survey._id,
           title: survey.title,
-          category: survey.category.category,
+          category: survey.category,
           numberOfTimesFilled: survey.numberOfTimesFilled,
           questions: survey.questions
         }

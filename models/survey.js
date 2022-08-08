@@ -9,9 +9,8 @@ const SurveySchema = new mongoose.Schema({
     maxlength: 50
   },
   category: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     required: true,
-    ref: 'category'
   },
   private: {
     type: Boolean,
@@ -52,6 +51,8 @@ const SurveySchema = new mongoose.Schema({
     default: 0
   }
 })
+
+SurveySchema.index({ category: 1 })
 
 const Survey = mongoose.model('survey', SurveySchema)
 

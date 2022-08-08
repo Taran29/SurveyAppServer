@@ -9,15 +9,21 @@ import { Category } from '../models/category.js'
 const router = express.Router()
 
 router.get('/page/:pageNumber', async (req, res) => {
+  let findObj = {
+    private: false
+  }
+  if (req.query.category) {
+    findObj['category'] = req.query.category
+  }
+
   const pageNumber = parseInt(req.params.pageNumber)
   const pageSize = 10
   let surveys = await Survey
-    .find({ private: false })
-    .populate('category', 'category')
+    .find(findObj)
     .skip((pageNumber - 1) * pageSize)
     .limit(pageSize)
 
-  let count = await Survey.countDocuments({ private: false })
+  let count = await Survey.countDocuments(findObj)
   let totalPages = Math.ceil(count / pageSize)
   if (!req.header('x-auth-token')) {
     return res.status(200).send({
@@ -49,9 +55,13 @@ router.get('/page/:pageNumber', async (req, res) => {
     private: false,
     _id: { $nin: [...filledSurveys, ...createdSurveys] },
   }
+
+  if (req.query.category) {
+    filterObj['category'] = req.query.category
+  }
+
   surveys = await Survey
     .find(filterObj)
-    .populate('category', 'category')
     .skip((pageNumber - 1) * pageSize)
     .limit(pageSize)
   count = await Survey.countDocuments(filterObj)
@@ -78,7 +88,7 @@ router.get('/:id', auth, async (req, res) => {
       message: 'Survey found',
       body: {
         title: survey.title,
-        category: survey.category.category,
+        category: survey.category,
         questions: survey.questions
       }
     })
@@ -120,10 +130,7 @@ router.post('/create', auth, async (req, res) => {
 
   try {
     const result = await survey.save()
-    await Category.findByIdAndUpdate(req.body.category, {
-      $push: {
-        surveys: result._id
-      },
+    await Category.findOneAndUpdate({ category: req.body.category }, {
       $inc: {
         numberOfSurveys: 1
       }
