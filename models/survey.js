@@ -9,10 +9,9 @@ const SurveySchema = new mongoose.Schema({
     maxlength: 50
   },
   category: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
-    minlength: 1,
-    maxlength: 50
+    ref: 'category'
   },
   private: {
     type: Boolean,

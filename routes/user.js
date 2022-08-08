@@ -17,7 +17,15 @@ router.get('/createdSurveys/page/:pageNumber', auth, async (req, res) => {
         "createdSurveyCount": 1,
         "_id": 0
       })
-      .populate('createdSurveys', 'title category')
+      // .populate('createdSurveys', 'title category')
+      .populate({
+        path: 'createdSurveys',
+        select: 'title category',
+        populate: {
+          path: 'category',
+          select: 'category'
+        }
+      })
 
     const count = createdSurveys.createdSurveyCount
     const totalPages = Math.ceil(count / pageSize)
@@ -26,7 +34,7 @@ router.get('/createdSurveys/page/:pageNumber', auth, async (req, res) => {
       return {
         _id: survey._id,
         title: survey.title,
-        category: survey.category
+        category: survey.category.category
       }
     })
 
@@ -52,7 +60,14 @@ router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
         "filledSurveys": { "$slice": [(pageNumber - 1) * pageSize, pageSize] },
         "filledSurveyCount": 1
       })
-      .populate('filledSurveys.surveyID', 'title category')
+      .populate({
+        path: 'filledSurveys.surveyID',
+        select: 'title category',
+        populate: {
+          path: 'category',
+          select: 'category'
+        }
+      })
 
     let count = filledSurveys.filledSurveyCount
     let totalPages = Math.ceil(count / pageSize)
@@ -61,7 +76,7 @@ router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
       return {
         _id: survey.surveyID._id,
         title: survey.surveyID.title,
-        category: survey.surveyID.category,
+        category: survey.surveyID.category.category,
       }
     })
 
@@ -72,6 +87,7 @@ router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
       }
     })
   } catch (ex) {
+    console.log(ex)
     return res.status(502).send({ message: 'Cannot connect to database.' })
   }
 })
@@ -79,7 +95,10 @@ router.get('/filledSurveys/page/:pageNumber', auth, async (req, res) => {
 router.get('/filledSurvey/:surveyID', auth, async (req, res) => {
   try {
     const filledSurveys = await User.findById(req.user._id, 'filledSurveys')
-    const survey = await Survey.findById(req.params.surveyID).select('questions title category')
+    const survey = await Survey
+      .findById(req.params.surveyID)
+      .select('questions title category')
+      .populate('category', 'category')
 
     let selections
     filledSurveys.filledSurveys.forEach((survey) => {
@@ -89,7 +108,11 @@ router.get('/filledSurvey/:surveyID', auth, async (req, res) => {
     })
     return res.status(200).send({
       body: {
-        survey: survey,
+        survey: {
+          title: survey.title,
+          category: survey.category.category,
+          questions: survey.questions
+        },
         selections: selections
       }
     })
@@ -111,6 +134,8 @@ router.get('/stats/:id', auth, async (req, res) => {
         'questions': 1,
         'createdBy': 1
       })
+      .populate('category', 'category')
+
     if (!survey) {
       return res.status(400).send({ message: 'Survey does not exist' })
     }
@@ -121,7 +146,12 @@ router.get('/stats/:id', auth, async (req, res) => {
 
     return res.status(200).send({
       body: {
-        survey: survey
+        survey: {
+          title: survey.title,
+          category: survey.category.category,
+          numberOfTimesFilled: survey.numberOfTimesFilled,
+          questions: survey.questions
+        }
       },
     })
   } catch (ex) {

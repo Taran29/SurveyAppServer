@@ -4,6 +4,7 @@ import { Survey, validateSurvey } from '../models/survey.js'
 import { User } from '../models/user.js'
 import jwt from 'jsonwebtoken'
 import mongoose from 'mongoose'
+import { Category } from '../models/category.js'
 
 const router = express.Router()
 
@@ -12,6 +13,7 @@ router.get('/page/:pageNumber', async (req, res) => {
   const pageSize = 10
   let surveys = await Survey
     .find({ private: false })
+    .populate('category', 'category')
     .skip((pageNumber - 1) * pageSize)
     .limit(pageSize)
 
@@ -47,7 +49,11 @@ router.get('/page/:pageNumber', async (req, res) => {
     private: false,
     _id: { $nin: [...filledSurveys, ...createdSurveys] },
   }
-  surveys = await Survey.find(filterObj).skip((pageNumber - 1) * pageSize).limit(pageSize)
+  surveys = await Survey
+    .find(filterObj)
+    .populate('category', 'category')
+    .skip((pageNumber - 1) * pageSize)
+    .limit(pageSize)
   count = await Survey.countDocuments(filterObj)
   totalPages = Math.ceil(count / pageSize)
 
@@ -60,28 +66,27 @@ router.get('/page/:pageNumber', async (req, res) => {
 })
 
 router.get('/:id', auth, async (req, res) => {
-  let survey
   try {
-    survey = await Survey.findById(req.params.id)
+    const survey = await Survey.findById(req.params.id).populate('category', 'category')
     if (survey.createdBy == req.user._id) {
       return res.status(307).send({
         message: 'Cannot fill your own survey.'
       })
     }
+
+    return res.status(200).send({
+      message: 'Survey found',
+      body: {
+        title: survey.title,
+        category: survey.category.category,
+        questions: survey.questions
+      }
+    })
   } catch (ex) {
     return res.status(400).send({
       message: 'Could not find survey with given ID.'
     })
   }
-
-  return res.status(200).send({
-    message: 'Survey found',
-    body: {
-      title: survey.title,
-      category: survey.category,
-      questions: survey.questions
-    }
-  })
 })
 
 router.post('/create', auth, async (req, res) => {
@@ -113,10 +118,16 @@ router.post('/create', auth, async (req, res) => {
     questions: questionsArr
   })
 
-  let result
-
   try {
-    result = await survey.save()
+    const result = await survey.save()
+    await Category.findByIdAndUpdate(req.body.category, {
+      $push: {
+        surveys: result._id
+      },
+      $inc: {
+        numberOfSurveys: 1
+      }
+    })
     await User.findByIdAndUpdate(req.user._id, {
       $push: {
         createdSurveys: result._id
@@ -125,14 +136,13 @@ router.post('/create', auth, async (req, res) => {
         createdSurveyCount: 1
       }
     })
+    res.status(200).send({
+      result: result,
+      message: 'Survey created successfully.'
+    })
   } catch (ex) {
     return res.status(404).send({ message: 'Cannot connect to database right now.' })
   }
-
-  res.status(200).send({
-    result: result,
-    message: 'Survey created successfully.'
-  })
 })
 
 router.post('/fill/:id', auth, async (req, res) => {
@@ -152,7 +162,7 @@ router.post('/fill/:id', auth, async (req, res) => {
   try {
     await Survey.findByIdAndUpdate(req.params.id, {
       $inc: incObj
-    }, { new: true })
+    })
 
     await User.findByIdAndUpdate(req.user._id, {
       $push: {
@@ -163,45 +173,9 @@ router.post('/fill/:id', auth, async (req, res) => {
       }
     })
 
-    return res.status(200).send({ message: 'Survey filled successfully. ' })
+    return res.status(200).send({ message: 'Survey filled successfully.' })
   } catch (ex) {
     return res.status(502).send({ message: 'Cannot connect to database right now.' })
-  }
-})
-
-router.delete('/:surveyID', auth, async (req, res) => {
-  const surveyID = req.params.surveyID
-
-  let survey
-  try {
-    survey = await Survey.findById(surveyID)
-  } catch (ex) {
-    return res.status(400).send({
-      message: 'Survey with the given ID does not exist.'
-    })
-  }
-
-  if (req.user._id != survey.createdBy) {
-    return res.status(401).send({
-      message: 'Unauthorized operation. The survey you are trying to delete is not yours.'
-    })
-  }
-
-  try {
-    await User.findByIdAndUpdate(req.user._id, {
-      $pull: {
-        createdSurveys: surveyID
-      }
-    })
-
-    await Survey.findByIdAndDelete(surveyID)
-    res.status(200).send({
-      message: 'Survey deleted successfully.'
-    })
-  } catch (ex) {
-    res.status(404).send({
-      message: 'Network Error. Cannot connect to database'
-    })
   }
 })
 

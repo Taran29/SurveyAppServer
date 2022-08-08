@@ -8,6 +8,7 @@ import {
   survey,
   changeName,
   user,
+  category
 } from './routes/index.js'
 
 config()
@@ -26,6 +27,7 @@ app.use('/api/forgotPassword', forgotPassword)
 app.use('/api/survey', survey)
 app.use('/api/user/changeName', changeName)
 app.use('/api/profile', user)
+app.use('/api/category', category)
 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
