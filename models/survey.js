@@ -32,7 +32,7 @@ const SurveySchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 1,
-        maxlength: 100
+        maxlength: 200
       },
       options: [{
         option: {
@@ -69,7 +69,7 @@ const validateSurvey = (survey) => {
     private: Joi.boolean().default(false).required(),
     createdAt: Joi.date().required(),
     questions: Joi.array().items({
-      question: Joi.string().min(1).max(100).required(),
+      question: Joi.string().min(1).max(200).required(),
       options: Joi.array().items(Joi.string())
     }),
   })
