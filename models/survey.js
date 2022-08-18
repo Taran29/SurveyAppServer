@@ -69,7 +69,7 @@ const validateSurvey = (survey) => {
     private: Joi.boolean().default(false).required(),
     createdAt: Joi.date().required(),
     questions: Joi.array().items({
-      question: Joi.string().min(1).max(50).required(),
+      question: Joi.string().min(1).max(100).required(),
       options: Joi.array().items(Joi.string())
     }),
   })
