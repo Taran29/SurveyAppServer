@@ -130,11 +130,13 @@ router.post('/create', auth, async (req, res) => {
 
   try {
     const result = await survey.save()
-    await Category.findOneAndUpdate({ category: req.body.category }, {
-      $inc: {
-        numberOfSurveys: 1
-      }
-    })
+    if (!req.body.private) {
+      await Category.findOneAndUpdate({ category: req.body.category }, {
+        $inc: {
+          numberOfSurveys: 1
+        }
+      })
+    }
     await User.findByIdAndUpdate(req.user._id, {
       $push: {
         createdSurveys: result._id
