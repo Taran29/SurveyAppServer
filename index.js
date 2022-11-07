@@ -11,7 +11,6 @@ import {
   category,
   blocks
 } from './routes/index.js'
-
 config()
 
 const app = express()
